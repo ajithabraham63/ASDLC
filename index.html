@@ -636,31 +636,23 @@
           <div class="gcs-head">
             <span class="gbadge">📦</span>
             <div>
-              <div class="gpath">gs://<b id="gcsBucketLbl">adlc_artifacts</b> / <b id="gcsPrefixLbl">brd_document/</b></div>
-              <div class="gmeta" id="gcsStatus">Loading documents…</div>
+              <div class="gpath">BRD Documents</div>
+              <div class="gmeta" id="gcsStatus" style="display:none"></div>
             </div>
             <span class="gspacer"></span>
             <button class="gref" id="gcsRefresh" title="Refresh">⟳</button>
           </div>
-          <details class="gcs-edit-wrap">
-            <summary class="gcs-edit" style="cursor:pointer;list-style:none;color:#b8cae4;font-size:11px">⚙ Change bucket / folder</summary>
-            <div class="gcs-edit">
-              <div style="min-width:140px"><label>Bucket</label><input id="gcsBucket" value="adlc_artifacts" /></div>
-              <div style="min-width:160px"><label>Folder / prefix</label><input id="gcsPrefix" value="brd_document/" /></div>
-            </div>
-          </details>
+          <input type="hidden" id="gcsBucket" value="adlc_artifacts" />
+          <input type="hidden" id="gcsPrefix" value="brd_document/" />
           <div id="gcsFiles" class="gcs-list"></div>
         </div>
-        <p class="small" style="margin:8px 2px 0">Tip: files load automatically when you open this tab. Each document can be loaded for analysis or sent straight to a new JIRA project. <span class="small">Reading <code>adlc_artifacts</code> needs a Vertex AI access token (Settings) or proxy mode.</span></p>
 
         <hr/>
         <h3 style="margin:6px 0">⬆️ Upload a document to the bucket</h3>
-        <p class="desc" style="margin-bottom:8px">Adds the selected file(s) to <code>gs://adlc_artifacts/brd_document/</code> so they appear in the list above and feed the BRD → JIRA pipeline.</p>
         <div class="toolbar">
           <input type="file" id="brdFiles" multiple accept=".pdf,.docx,.doc,.txt,.md" />
           <button class="btn" id="brdAnalyze">⬆ Upload</button>
           <button class="btn ghost" id="brdClear">Clear</button>
-          <span class="pill" id="brdStatus">No file selected</span>
         </div>
       </div>
     </div>
@@ -2042,8 +2034,6 @@ async function listBucketFiles(){
   const bucket = ($('#gcsBucket').value.trim() || 'adlc_artifacts');
   const prefix = $('#gcsPrefix').value.trim();
   state.gcs.bucket = bucket; state.gcs.prefix = prefix;
-  $('#gcsBucketLbl').textContent = bucket;
-  $('#gcsPrefixLbl').textContent = prefix || '(root)';
   const fl = $('#gcsFiles'), ref = $('#gcsRefresh');
   $('#gcsStatus').textContent = 'Loading documents…';
   ref.classList.add('spin');
@@ -2093,14 +2083,11 @@ function renderBucketFiles(items){
   fl.innerHTML = items.map((o,i) => {
     const short = o.name.split('/').pop();
     const loaded = state.gcs.loaded.has(o.name);
-    const ext = (short.split('.').pop() || 'file').toUpperCase();
-    const sub = [fmtBytes(o.size), o.updated ? new Date(o.updated).toLocaleDateString() : ''].filter(Boolean).join(' · ');
     return `<div class="gcs-file ${loaded?'loaded':''}" data-i="${i}">`+
       `<div class="fic">${fileEmoji(o.name)}</div>`+
-      `<div class="fmeta"><div class="fname" title="${escapeHtml(o.name)}">${escapeHtml(short)}</div>`+
-        `<div class="fsub"><span class="ftag">${loaded?'✓ loaded':ext}</span> ${sub}</div></div>`+
+      `<div class="fmeta"><div class="fname" title="${escapeHtml(o.name)}">${escapeHtml(short)}</div></div>`+
       `<div class="fbtns">`+
-        `<button class="mini jira" data-act="jira" data-i="${i}" title="Generate a JIRA project from this document">＋ Create JIRA project</button>`+
+        `<button class="mini jira" data-act="jira" data-i="${i}" title="Create a project from this document">Create Project</button>`+
       `</div></div>`;
   }).join('');
   fl.querySelectorAll('.mini').forEach(b => b.addEventListener('click', () => {
@@ -2142,8 +2129,6 @@ async function loadBucketFile(i, append){
     const block = `\n\n===== FILE: ${short} (gs://${bucket}/${o.name}) =====\n${text}`;
     state.brdText = (append && state.brdText) ? (state.brdText + block) : block.trim();
     state.gcs.loaded.add(o.name);
-    const n = state.gcs.loaded.size;
-    $('#brdStatus').textContent = `${append ? n+' bucket file(s)' : short} · ${state.brdText.length.toLocaleString()} chars`;
     renderBucketFiles(state.gcs.items);
     $('#gcsStatus').textContent = `${short} loaded`;
     return true;
@@ -2492,7 +2477,7 @@ async function createJiraProject(i){
 $('#brdFiles').addEventListener('change', handleBrdFiles);
 $('#brdClear').addEventListener('click', () => {
   state.brdText='';
-  $('#brdStatus').textContent='No file loaded'; $('#brdFiles').value='';
+  $('#brdFiles').value='';
   state.gcs.loaded.clear(); if(state.gcs.items.length) renderBucketFiles(state.gcs.items);
 });
 $('#brdAnalyze').addEventListener('click', uploadBrdFiles);
@@ -2551,7 +2536,6 @@ async function handleBrdFiles(e){
     combined += await readFileAsText(f);
   }
   state.brdText = combined.trim();
-  $('#brdStatus').textContent = `${files.length} file(s) · ${state.brdText.length.toLocaleString()} chars`;
 }
 function readFileAsText(file){
   return new Promise((resolve) => {
