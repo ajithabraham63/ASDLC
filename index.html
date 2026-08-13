@@ -206,6 +206,8 @@
   .pc-types{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
   .pc-tchip{font-size:9.5px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--panel-2);border:1px solid var(--line);color:#566}
   .pc-tchip b{color:#137a57}
+  .pm-nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .pm-nav .btn{padding:9px 16px;font-size:13px}
   .pc-foot{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}
   .pc-badge{font-size:9px;font-weight:700;padding:3px 9px;border-radius:999px}
   .pc-badge.on{background:rgba(31,169,122,.14);color:#137a57}
@@ -315,6 +317,10 @@
   .pm-doc-body.md li{margin:3px 0}
   .pm-doc-body.md hr{border:0;border-top:1px solid var(--line);margin:12px 0}
   .pm-doc-body.md code{background:var(--panel-2);border:1px solid var(--line);border-radius:5px;padding:1px 5px;font-family:var(--mono);font-size:11.5px;color:#a8489a}
+  .md-table{border-collapse:collapse;width:100%;margin:12px 0;font-size:12.5px;font-family:var(--sans)}
+  .md-table th,.md-table td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top}
+  .md-table th{background:var(--panel-2);font-weight:700;color:#0a1f44;white-space:nowrap}
+  .md-table tbody tr:nth-child(even){background:rgba(20,30,50,.025)}
   .pm-doc-body.md pre.md-pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:11px 13px;overflow:auto;margin:8px 0}
   .pm-doc-body.md pre.md-pre code{background:none;border:0;padding:0;color:#2a3340;font-size:12px;white-space:pre}
   .pm-doc-body.md a{color:var(--accent)}
@@ -348,6 +354,17 @@
   #fullView .fv-body{height:calc(100vh - 54px);min-height:0;overflow:hidden}
   #fullView .fv-body.fv-scroll{height:calc(100vh - 54px);overflow:auto;padding:26px 32px}
   #fullView .fv-card.pm-doc-body{max-height:none;min-height:calc(100vh - 118px);overflow:visible}
+  /* Design master-detail: left nav + right document pane */
+  .design-split{display:flex;height:100%;min-height:0}
+  .design-side{flex:0 0 250px;border-right:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--panel-2);overflow:auto}
+  .design-tab{display:flex;align-items:flex-start;gap:12px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;font-family:var(--sans);transition:transform .12s,box-shadow .15s,border-color .15s}
+  .design-tab:hover{border-color:rgba(47,107,255,.45);transform:translateY(-1px)}
+  .design-tab.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(47,107,255,.15);background:#f5f8ff}
+  .design-tab .design-choice-icon{width:38px;height:38px;font-size:18px;flex:0 0 auto}
+  .design-tab-title{display:block;font-size:14px;font-weight:800;color:#0a1f44}
+  .design-tab-desc{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  .design-doc{flex:1 1 auto;min-height:0;overflow:auto;padding:20px 26px;background:var(--bg)}
+  .design-doc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;font-size:12.5px;font-weight:700;color:var(--muted)}
   .design-choice-grid{height:100%;display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:22px;padding:30px;background:var(--bg)}
   .design-choice-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;display:flex;flex-direction:column;gap:12px;justify-content:center;align-items:flex-start;box-shadow:0 1px 4px rgba(20,30,50,.08);cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;text-align:left;font-family:var(--sans)}
   .design-choice-card:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(47,107,255,.16);border-color:rgba(47,107,255,.45)}
@@ -1063,20 +1080,18 @@ function openProjectModal(i){
         `<div class="pm-tile"><div class="v" style="color:#8a96a6">${s.st.not}</div><div class="l">Not started</div></div>`+
       `</div>`+
       `<div class="pmt">${row('Epics',s.dev[0],s.counts[0])}${row('Features',s.dev[1],s.counts[1])}${row('User Stories',s.dev[2],s.counts[2])}${row('Tasks',s.dev[3],s.counts[3])}${row('Sub-tasks',s.dev[4],s.counts[4])}</div>`+
-      `<div class="pc-foot" style="margin-top:14px"><span class="pc-badge ${s.arch?'on':'off'}" id="pmArchBadge">${s.arch?'✓':'○'} Architecture</span><span class="pc-badge ${s.test?'on':'off'}" id="pmTestBadge">${s.test?'✓':'○'} Test plan</span></div>`+
+      `<div class="pm-nav"><button class="btn ghost" data-nav="artifacts">📋 Artifacts</button><button class="btn ghost" data-nav="design">🏗️ Design Documents</button><button class="btn ghost" data-nav="code">💻 Source Code</button></div>`+
     `</div>`+
   `</div>`;
   // Swap the list for the detail section.
   $('#dashMain').style.display = 'none';
   host.style.display = 'block';
   host.querySelector('[data-back]').onclick = backToProjects;
+  // Navigation buttons → open the artifacts / design docs / source code views for this project.
+  { const na = host.querySelector('[data-nav="artifacts"]'); if(na) na.onclick = () => showArtifactsFull(p);
+    const nd = host.querySelector('[data-nav="design"]'); if(nd) nd.onclick = () => showDesignFull(p.name);
+    const nc = host.querySelector('[data-nav="code"]'); if(nc) nc.onclick = () => showCodeFilesFull(p.name); }
   $('.main').scrollTop = 0;
-// Reflect actual bucket availability on the readiness badges and lifecycle stage cards.
-  specFilesFor(p.name).then(found => {
-    const ab = host.querySelector('#pmArchBadge'), tb = host.querySelector('#pmTestBadge');
-    if(ab){ ab.className = 'pc-badge ' + (found.arch?'on':'off'); ab.textContent = (found.arch?'✓':'○') + ' Architecture'; }
-    if(tb){ tb.className = 'pc-badge ' + (found.test?'on':'off'); tb.textContent = (found.test?'✓':'○') + ' Test plan'; }
-  }).catch(() => {});
   refreshLifecycleStages(p).catch(e => { const h = $('#pmStageWrap'); if(h) h.innerHTML = `<div class="gcs-empty">Could not load lifecycle stages: ${escapeHtml(e.message)}</div>`; });
 }
 
@@ -1393,9 +1408,26 @@ function renderMd(md){
   const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
   let out = '', inCode = false, list = '';
   const closeList = () => { if(list){ out += `</${list}>`; list = ''; } };
-  for(const raw of lines){
+  // A GitHub-style table separator row, e.g. |----|:---:|---|
+  const isSep = (s) => /\|/.test(s) && /-/.test(s) && /^[\s|:\-]+$/.test(s);
+  const cells = (s) => s.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
+  for(let i = 0; i < lines.length; i++){
+    const raw = lines[i];
     if(/^```/.test(raw)){ if(inCode){ out += '</code></pre>'; inCode = false; } else { closeList(); out += '<pre class="md-pre"><code>'; inCode = true; } continue; }
     if(inCode){ out += escapeHtml(raw) + '\n'; continue; }
+    // Table: a header row of pipes immediately followed by a separator row.
+    if(/\|/.test(raw) && i + 1 < lines.length && isSep(lines[i + 1])){
+      closeList();
+      const headers = cells(raw);
+      let bodyHtml = '', j = i + 2;
+      for(; j < lines.length && lines[j].trim() !== '' && /\|/.test(lines[j]) && !isSep(lines[j]); j++){
+        const cs = cells(lines[j]);
+        bodyHtml += '<tr>' + headers.map((_, k) => `<td>${inline(cs[k] != null ? cs[k] : '')}</td>`).join('') + '</tr>';
+      }
+      out += `<table class="md-table"><thead><tr>${headers.map(h => `<th>${inline(h)}</th>`).join('')}</tr></thead><tbody>${bodyHtml}</tbody></table>`;
+      i = j - 1;
+      continue;
+    }
     if(/^\s*$/.test(raw)){ closeList(); continue; }
     let m;
     if((m = raw.match(/^(#{1,6})\s+(.*)$/))){ closeList(); out += `<div class="md-h md-h${m[1].length}">${inline(m[2])}</div>`; continue; }
@@ -1506,35 +1538,34 @@ function showArtifactsFull(p){
   renderProjectTreeInto(wrap, state.jira);
 }
 
+// Design: left nav (Architecture / Test Plan) + right detail pane. Opens Architecture by default.
 async function showDesignFull(projName){
-  const { body, acts } = openFull('🏗️ Design', `${projName} · Select Architecture or Test Plan`, '');
-  try{
-    const found = await specFilesFor(projName);
-    const hasArch = !!found.arch;
-    const hasTest = !!found.test;
-    acts.innerHTML = `${hasArch?'<button class="fv-dl" data-open="arch">Architecture</button>':''}${hasTest?'<button class="fv-dl" data-open="test">Test Plan</button>':''}`;
-    const archTop = acts.querySelector('[data-open="arch"]'); if(archTop) archTop.onclick = () => showDocFull('arch', projName);
-    const testTop = acts.querySelector('[data-open="test"]'); if(testTop) testTop.onclick = () => showDocFull('test', projName);
-    body.innerHTML = `<div class="design-choice-grid">
-      <button class="design-choice-card" data-design="arch" ${hasArch?'':'disabled'} title="${hasArch?'Open Architecture document':'Architecture document not available'}">
-        <span class="design-choice-icon">🏗️</span>
-        <span class="design-choice-title">Architecture</span>
-        <span class="design-choice-desc">Open the architecture document separately.</span>
-        <span class="design-choice-action">${hasArch?'Open Architecture →':'Architecture not available'}</span>
-      </button>
-      <button class="design-choice-card" data-design="test" ${hasTest?'':'disabled'} title="${hasTest?'Open Test Plan document':'Test Plan document not available'}">
-        <span class="design-choice-icon">🧪</span>
-        <span class="design-choice-title">Test Plan</span>
-        <span class="design-choice-desc">Open the testing plan document separately.</span>
-        <span class="design-choice-action">${hasTest?'Open Test Plan →':'Test Plan not available'}</span>
-      </button>
-    </div>`;
-    const archCard = body.querySelector('[data-design="arch"]'); if(archCard && hasArch) archCard.onclick = () => showDocFull('arch', projName);
-    const testCard = body.querySelector('[data-design="test"]'); if(testCard && hasTest) testCard.onclick = () => showDocFull('test', projName);
-    if(!hasArch && !hasTest){
-      body.innerHTML = `<div class="fv-card"><span class="err">No architecture or test plan document found in gs://${SPEC_BUCKET}/${SPEC_PREFIX}${projName}/</span></div>`;
-    }
-  }catch(e){ body.innerHTML = `<div class="fv-card"><span class="err">${escapeHtml(e.message)}</span></div>`; }
+  const { body } = openFull('🏗️ Design', `${projName} · Architecture & Test Plan`, '');
+  body.innerHTML = `<div class="design-split">
+    <div class="design-side">
+      <button class="design-tab" data-doc="arch"><span class="design-choice-icon">🏗️</span><span class="design-tab-txt"><span class="design-tab-title">Architecture</span><span class="design-tab-desc">Solution architecture document</span></span></button>
+      <button class="design-tab" data-doc="test"><span class="design-choice-icon">🧪</span><span class="design-tab-txt"><span class="design-tab-title">Test Plan</span><span class="design-tab-desc">Testing plan document</span></span></button>
+    </div>
+    <div class="design-doc" id="designDoc"><div class="fv-card"><span class="small">Loading…</span></div></div>
+  </div>`;
+  let found = {};
+  try{ found = await specFilesFor(projName); }catch(_){}
+  const pane = body.querySelector('#designDoc');
+  const tabs = body.querySelectorAll('.design-tab');
+  const loadDoc = async (kind) => {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.doc === kind));
+    pane.innerHTML = `<div class="fv-card"><span class="small">Loading from bucket…</span></div>`;
+    try{
+      const name = kind === 'arch' ? found.arch : found.test;
+      if(!name) throw new Error(`No ${kind === 'arch' ? 'architecture' : 'test plan'} document found in gs://${SPEC_BUCKET}/${SPEC_PREFIX}${projName}/`);
+      const text = await gcsGetText(SPEC_BUCKET, name);
+      const short = name.split('/').pop();
+      pane.innerHTML = `<div class="design-doc-head"><span>${escapeHtml(short)}</span><button class="btn ghost" data-dl style="padding:5px 10px;font-size:12px">⬇ Download</button></div><div class="fv-card pm-doc-body md">${renderMd(text)}</div>`;
+      const dl = pane.querySelector('[data-dl]'); if(dl) dl.onclick = () => download(short, text);
+    }catch(e){ pane.innerHTML = `<div class="fv-card"><span class="err">${escapeHtml(e.message)}</span></div>`; }
+  };
+  tabs.forEach(t => t.onclick = () => loadDoc(t.dataset.doc));
+  loadDoc('arch');   // default view on open
 }
 
 // Architecture / Test plan full screen (fetched from the bucket).
